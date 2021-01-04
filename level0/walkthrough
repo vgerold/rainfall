@@ -36,7 +36,7 @@ level0@RainFall:~$ gdb level0
    0x08048f64 <+164>:	mov    %edx,0xc(%esp)  // 4 аргумент (x/1cb $esp+0xc) -96 <stderr>
    0x08048f68 <+168>:	movl   $0x5,0x8(%esp)  // 3 аргумент (x/1cb $esp+0x8) 5
    0x08048f70 <+176>:	movl   $0x1,0x4(%esp)  // 2 аргумент (x/1cb $esp+0x4) 1
-   0x08048f78 <+184>:	mov    %eax,(%esp)     // 1 аргумент (x/4x $esp x/5b 0x80c5350) "No !'n
+   0x08048f78 <+184>:	mov    %eax,(%esp)     // 1 аргумент (x/4x $esp x/5b 0x80c5350) "No !\n"
 => 0x08048f7b <+187>:	call   0x804a230 <fwrite>
 
 И нв выводе программы получаем "No !"
