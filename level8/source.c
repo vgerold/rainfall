@@ -6,24 +6,33 @@ int	main()
 {
 	char*	service;
 	char*	auth;
-	void*	buf;
-	void*	edx;
-	int	ecx;
-	char*	str;
+	char	buffer[128];
 
 	service = NULL;
 	auth = NULL;
-	buffer = NULL;
 	while (1)
 	{
 		printf("%p, %p\n", auth, service);
-		if (!(fgets((char*)buffer, 0x80, stdin)))
+		if (!(fgets(buffer, 64, stdin)))
 			break;
-		if(!(strncmp("auth ", (char*)buffer, 0x5)))
+		if (!(strncmp("auth ", buffer, 5)))
 		{
-			str = malloc(4)
+			auth = malloc(4);
+			bzero((void*)auth, 4);
+			if (strlen(buffer + 5) - 1 < 30)
+				strcpy(auth, buffer + 5);
 		}
-
+		if (!(strncmp("reset", buffer, 5)))
+			free(auth);
+		if (!(strncmp("service", buffer, 6)))
+			service = strdup(buffer + 7);
+		if (!(strncmp("login", buffer, 5)))
+		{
+			if (auth[32])
+				system("/bin/sh");
+			else
+				fwrite(&"Password:\n", 1, 10, stdout);
+		}
 	}
 	return (0);
 }
