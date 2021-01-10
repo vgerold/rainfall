@@ -10,7 +10,6 @@ int	main()
 
 	service = NULL;
 	auth = NULL;
-	buffer = NULL;
 	while (1)
 	{
 		printf("%p, %p\n", auth, service);
