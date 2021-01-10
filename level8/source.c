@@ -20,7 +20,6 @@ int	main()
 		{
 			auth = malloc(4);
 			bzero((void*)auth, 4);
-			(void*)buffer = (long)0;
 			if (strlen(buffer + 5) - 1 < 30)
 				strcpy(auth, buffer + 5);
 		}
@@ -33,7 +32,7 @@ int	main()
 			if (auth[32])
 				system("/bin/sh");
 			else
-				fwrite(&"Password:\n", 10, 1, stdout);
+				fwrite(&"Password:\n", 1, 10, stdout);
 		}
 	}
 	return (0);
