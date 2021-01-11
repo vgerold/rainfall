@@ -11,13 +11,13 @@ void p()
 	fflush(stdout);
 	gets(str);
 
-	if ((0xb0000000 & check) != 0xb0000000)
+	if ((0xb0000000 & check) == 0xb0000000)
 	{
-		puts(str);
-		strdup(str);
+        printf("(%p)\n", check);
+        exit(1);
 	}
-	printf("(%p)\n", check);
-	exit(1);
+    puts(str);
+    strdup(str);
 }
 
 
