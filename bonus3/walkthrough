@@ -1,0 +1,199 @@
+
+
+# Анализ поведения:
+
+bonus3@RainFall:~$ ./bonus3 
+bonus3@RainFall:~$ ./bonus3 111
+
+bonus3@RainFall:~$ ./bonus3 111111
+Segmentation fault (core dumped)
+bonus3@RainFall:~$ ./bonus3 11111
+Segmentation fault (core dumped)
+bonus3@RainFall:~$ ./bonus3 1111
+
+bonus3@RainFall:~$ ./bonus3 111
+
+bonus3@RainFall:~$ ./bonus3 111 111
+bonus3@RainFall:~$ ./bonus3 111 111 111
+bonus3@RainFall:~$ ./bonus3 111 111 111 111
+bonus3@RainFall:~$ ./bonus3 aaaa
+
+bonus3@RainFall:~$ ./bonus3 aaaaaa
+
+bonus3@RainFall:~$ ./bonus3 aaaaaaaaa
+
+bonus3@RainFall:~$ ./bonus3 aaaaaaaaaaaaaa
+
+bonus3@RainFall:~$ ./bonus3 aaaaaaaaaaaaaaaaaaaaaaaa
+
+bonus3@RainFall:~$ ./bonus3 aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa
+
+bonus3@RainFall:~$ ./bonus3 aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa
+
+bonus3@RainFall:~$ ./bonus3 0
+
+bonus3@RainFall:~$ ./bonus3 -1
+
+bonus3@RainFall:~$ ./bonus3 -100
+
+bonus3@RainFall:~$ ./bonus3 -1000
+
+bonus3@RainFall:~$ ./bonus3 -10000
+
+bonus3@RainFall:~$ ./bonus3 -100000
+
+bonus3@RainFall:~$ ./bonus3 -1000000
+Segmentation fault (core dumped)
+
+bonus3@RainFall:~$ ./bonus3 -10000 > /tmp/b3
+bonus3@RainFall:~$ cat -e /tmp/b3 
+$
+
+
+Из функций в программе, похоже, есть только main, остальные библиотечные и системные:
+(gdb) i functions 
+All defined functions:
+
+Non-debugging symbols:
+0x080483b0  strcmp
+0x080483b0  strcmp@plt
+0x080483c0  fclose
+0x080483c0  fclose@plt
+0x080483d0  fread
+0x080483d0  fread@plt
+0x080483e0  puts
+0x080483e0  puts@plt
+0x08048410  fopen
+0x08048410  fopen@plt
+0x08048420  execl
+0x08048420  execl@plt
+0x08048430  atoi
+0x08048430  atoi@plt
+0x080484d0  frame_dummy
+0x080484f4  main
+
+
+2. GDB
+
+Dump of assembler code for function main:
+   0x080484f4 <+0>:     push   %ebp 					// пролог (сохранение адреса указателя на начало фрейма функции из регистра ebp предыдущего фрейма, записав его на стек)
+   0x080484f5 <+1>:     mov    %esp,%ebp				// регулировка EBP с предыдущего фрейма на текущий (текущее значение ESP).
+   0x080484f7 <+3>:     push   %edi  					// сохранение регистра EDI
+   0x080484f8 <+4>:     push   %ebx	// и EBX
+   0x080484f9 <+5>:     and    $0xfffffff0,%esp			//  установка вершины стека на 0xfffffff0 (выравнивание стека)
+   0x080484fc <+8>:     sub    $0xa0,%esp				// установка размера стека размером 160 байт
+
+   0x08048502 <+14>:    mov    $0x80486f0,%edx			// запись "r" в EDX
+   0x08048507 <+19>:    mov    $0x80486f2,%eax			// запись "/home/user/end/.pass" в EAX
+   0x0804850c <+24>:    mov    %edx,0x4(%esp)			// положить в стек со смещением +4 значение "r" EDX 
+   0x08048510 <+28>:    mov    %eax,(%esp)				// записать адрес EAX на стек
+   0x08048513 <+31>:    call   0x8048410 <fopen plt>	// открыть файл fopen("/home/user/end/.pass", "r") c правами на запись
+															FILE *fopen(const char *pathname, const char *mode);
+
+   0x08048518 <+36>:    mov    %eax,0x9c(%esp)			// положить в стек+156 значение регистра EAX (возврат fopen("/home/user/end/.pass", "r"))
+   0x0804851f <+43>:    lea    0x18(%esp),%ebx			// записать в EBX значение со стека ESP+24
+   0x08048523 <+47>:    mov    $0x0,%eax				// обнулить EAX
+   0x08048528 <+52>:    mov    $0x21,%edx				// записать в регистр EDX значение 33
+   0x0804852d <+57>:    mov    %ebx,%edi				// скопировать в EDI значение EBX
+   0x0804852f <+59>:    mov    %edx,%ecx				// скопировать в ECX значение EDX
+   0x08048531 <+61>:    rep stos %eax,%es:(%edi)		// заполнить блок из (E)CX двойных слов по адресу ES:(E)DI содержимым EAX
+															Для ECX повторений сохраняет содержимое EAX в том месте, куда указывает EDI , увеличивая или уменьшая EDI (в зависимости от флага направления) на 4 байта каждый раз. 
+															Обычно это используется для операции типа memset
+
+if (n == (long)0)
+if (m == (long)2)
+else
+   
+   0x08048533 <+63>:    cmpl   $0x0,0x9c(%esp)			// если значение стека+156 равно 0
+   0x0804853b <+71>:    je     0x8048543 <main+79>		// то перейти на смещение main+79
+   0x0804853d <+73>:    cmpl   $0x2,0x8(%ebp)			// если значение EBP+8 равно 2
+   0x08048541 <+77>:    je     0x804854d <main+89>		// то перейти на смещение main+89
+   0x08048543 <+79>:    mov    $0xffffffff,%eax			// заполнить байты EAX значением -1
+   0x08048548 <+84>:    jmp    0x8048615 <main+289>		// перейти на смещение main+289
+
+   
+   0x0804854d <+89>:    lea    0x18(%esp),%eax			// записать в EAX значение со стека +24
+   0x08048551 <+93>:    mov    0x9c(%esp),%edx			// записать в EDX значение со стека +156 (возврат fopen("/home/user/end/.pass", "r"))
+   0x08048558 <+100>:   mov    %edx,0xc(%esp)			// положить на стек +12 значение EDX (возврат fopen())
+   0x0804855c <+104>:   movl   $0x42,0x8(%esp)			// записать на стек+8 значение 66 
+   0x08048564 <+112>:   movl   $0x1,0x4(%esp)			// записать на стеке+4 значение 1
+   0x0804856c <+120>:   mov    %eax,(%esp)				// записать на вершине стека значение EAX
+   0x0804856f <+123>:   call   0x80483d0 <fread  plt>	// вызов fread() 
+   0x08048574 <+128>:   movb   $0x0,0x59(%esp)			// записать 0 четырьмя байтами в стек + 89
+   0x08048579 <+133>:   mov    0xc(%ebp),%eax			// скопировать в EAX значение EBP +12
+   0x0804857c <+136>:   add    $0x4,%eax				// к содержимому регистра EAX прибавить 4
+   0x0804857f <+139>:   mov    (%eax),%eax				// записать в EAX содержимое по адресу EAX
+   0x08048581 <+141>:   mov    %eax,(%esp)				// поместить на стек EAX
+   0x08048584 <+144>:   call   0x8048430 <atoi plt>		// вызов atoi(eax)
+   0x08048589 <+149>:   movb   $0x0,0x18(%esp,%eax,1)	// скопировать байт 0 по адресу EAX+ESP*1+24
+   0x0804858e <+154>:   lea    0x18(%esp),%eax			// скопировать со стека+24 значение в EAX
+   0x08048592 <+158>:   lea    0x42(%eax),%edx			// скопировать с EAX+66
+   0x08048595 <+161>:   mov    0x9c(%esp),%eax			// скопировать со стека+156
+
+   0x0804859c <+168>:   mov    %eax,0xc(%esp)			// положить на стек 4 байт значения EAX со смещением +12
+   0x080485a0 <+172>:   movl   $0x41,0x8(%esp)			// скопировать 8 байт значения (long)61 на стек со смещением +8
+   0x080485a8 <+180>:   movl   $0x1,0x4(%esp)			// скопировать 8 байт значения (long)1 на стек со смещением +4
+   0x080485b0 <+188>:   mov    %edx,(%esp)				// скопировать значение EDX на вершину стека
+   0x080485b3 <+191>:   call   0x80483d0 <fread plt>	// вызов fread()
+   
+   0x080485b8 <+196>:   mov    0x9c(%esp),%eax			// скопировать значение со стека+156 в EAX
+   0x080485bf <+203>:   mov    %eax,(%esp)				// положить на вершину стека значение EAX
+   0x080485c2 <+206>:   call   0x80483c0 <fclose plt>	// закрыть файловый дескриптор (fclose() )
+   
+   0x080485c7 <+211>:   mov    0xc(%ebp),%eax			// скопировать значение EBP+12 в регистр EAX
+   0x080485ca <+214>:   add    $0x4,%eax				// прибавить 4 к EAX
+   
+   0x080485cd <+217>:   mov    (%eax),%eax				// скопировать содержимое по адресу EAX в регистр EAX
+   0x080485cf <+219>:   mov    %eax,0x4(%esp)			// скопировать содержимое EAX на стек+4
+   0x080485d3 <+223>:   lea    0x18(%esp),%eax			// записать в EAX значение со стека+24
+   0x080485d7 <+227>:   mov    %eax,(%esp)				// положить на вершину стека значение EAX
+   
+   0x080485da <+230>:   call   0x80483b0 <strcmp plt>	// вызов strcmp()
+   0x080485df <+235>:   test   %eax,%eax				// проверка есть ли не нулевой возврат strcmp
+   0x080485e1 <+237>:   jne    0x8048601 <main+269>		// если не нулевой, то переход на смещение +269
+   
+   
+   0x080485e3 <+239>:   movl   $0x0,0x8(%esp)			// скопировать 8 байт значением 0x0 на стек+8
+   0x080485eb <+247>:   movl   $0x8048707,0x4(%esp)		// скопировать "sh" в стек+4
+   0x080485f3 <+255>:   movl   $0x804870a,(%esp)		// скопировать "/bin/sh" на вершину стека
+   0x080485fa <+262>:   call   0x8048420 <execl plt>	// вызов execl("/bin/sh", "sh", 0)
+   0x080485ff <+267>:   jmp    0x8048610 <main+284>		// переход main+284
+   
+   
+   0x08048601 <+269>:   lea    0x18(%esp),%eax			// записать в EAX значение со стека+18
+   0x08048605 <+273>:   add    $0x42,%eax				// прибавить к EAX 66
+   0x08048608 <+276>:   mov    %eax,(%esp)				// положить на вершину стека EAX
+   0x0804860b <+279>:   call   0x80483e0 <puts plt>		// вызов puts()
+
+   
+   0x08048610 <+284>:   mov    $0x0,%eax				// обнулить EAX
+   0x08048615 <+289>:   lea    -0x8(%ebp),%esp			// записать в ESP значение EBP-8
+   0x08048618 <+292>:   pop    %ebx						// снять со стека EBX
+   0x08048619 <+293>:   pop    %edi						// снять со стека EDI
+   0x0804861a <+294>:   pop    %ebp						// снять со стека EBP
+   0x0804861b <+295>:   ret    							// return()
+End of assembler dump.
+
+При том, что в bash программа отрабатывает при некоторых значениях без ошибки, в GDB всегда выдается ошибка 0377:
+(gdb) r 1
+Starting program: /home/user/bonus3/bonus3 1
+[Inferior 1 (process 10862) exited with code 0377]
+(gdb) r 11111111111111
+Starting program: /home/user/bonus3/bonus3 11111111111111
+[Inferior 1 (process 10863) exited with code 0377]
+
+Предположение:
+
+https://bytes.com/topic/c/answers/216185-problem-program-exited-code-0377-a
+
+1) вызов exit(-1): (-1) <- 0377(octet) = -1(decimal)
+(gdb) p/o -1
+$1 = 037777777777
+2) return (-1) в main
+
+
+
+
+
+
+
