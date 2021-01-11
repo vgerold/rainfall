@@ -1,3 +1,10 @@
+# Решение
+./bonus3 ""
+$ whoami
+end
+$ cd ../end
+$ cat .pass
+3321***53c
 
 
 # Анализ поведения:
@@ -91,7 +98,7 @@ Dump of assembler code for function main:
 															FILE *fopen(const char *pathname, const char *mode);
 
    0x08048518 <+36>:    mov    %eax,0x9c(%esp)			// положить в стек+156 значение регистра EAX (возврат fopen("/home/user/end/.pass", "r"))
-   0x0804851f <+43>:    lea    0x18(%esp),%ebx			// записать в EBX значение со стека ESP+24
+   0x0804851f <+43>:    lea    0x18(%esp),%ebx			// записать в EBX адрес со стека ESP+24
    0x08048523 <+47>:    mov    $0x0,%eax				// обнулить EAX
    0x08048528 <+52>:    mov    $0x21,%edx				// записать в регистр EDX значение 33
    0x0804852d <+57>:    mov    %ebx,%edi				// скопировать в EDI значение EBX
@@ -182,16 +189,20 @@ Starting program: /home/user/bonus3/bonus3 1
 Starting program: /home/user/bonus3/bonus3 11111111111111
 [Inferior 1 (process 10863) exited with code 0377]
 
-Предположение:
+Взлом
 
-https://bytes.com/topic/c/answers/216185-problem-program-exited-code-0377-a
+Передаем "" как argv[1].
 
-1) вызов exit(-1): (-1) <- 0377(octet) = -1(decimal)
-(gdb) p/o -1
-$1 = 037777777777
-2) return (-1) в main
+В данной строке на индекс 0 буфера помещается '\0'.
+    buf[atoi(argv[1])] = 0;
 
+В строках
+    if (!(strcmp(buf, argv[1])))
+        execl("/bin/sh", "sh", NULL);
 
+strcmp возвращает 0, тк проверка происходит с buf, который в индексе 0 содержит '\0', как и argv[1].
+
+Попадаем в bash. Празднуем.
 
 
 
