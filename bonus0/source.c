@@ -8,7 +8,7 @@ void p(char *buf, char *message)
     puts(message);
     read(0, p_buf, 4096);
     *strchr(p_buf, 10) = '\0';
-    buf = strncpy(buf, p_buf, 20);
+    strncpy(buf, p_buf, 20);
 }
 
 void pp(char *buf)
