@@ -15,13 +15,13 @@ void m()
 int main(int argc, char **argv)
 {
 	char *str1;
-	void *ptr;
+	void (*ptr)(void);
 
 	str1 = (char*)malloc(64);
-	ptr = (void**)malloc(4);
+	ptr = (void*)malloc(4);
 
-	*ptr = m;
-	strcpy(s, argv[1]);
+	ptr = m;
+	strcpy(str1, argv[1]);
 
 	ptr();
 	return (0);

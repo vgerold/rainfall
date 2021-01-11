@@ -14,7 +14,7 @@ void p()
 	if ((0xb0000000 & check) == 0xb0000000)
 	{
         printf("(%p)\n", check);
-        exit(1);
+        _exit(1);
 	}
     puts(str);
     strdup(str);
