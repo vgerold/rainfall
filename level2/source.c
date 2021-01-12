@@ -11,8 +11,7 @@ void p()
 	fflush(stdout);
 	gets(str);
 
-	check = __builtin_return_address (0);
-	if ((0xb0000000 & (unsigned int)check) == 0xb0000000)
+	if ((0xb0000000 & check) == 0xb0000000)
 	{
         printf("(%p)\n", check);
         _exit(1);
